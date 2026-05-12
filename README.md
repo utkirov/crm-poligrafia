@@ -1,78 +1,145 @@
-# CRM Poligraf
+# CRM Полиграфия
 
-Local CRM for a print shop built with `React`, `TypeScript`, and `Vite`.
+Локальная CRM-система для полиграфических компаний. Все данные хранятся в `localStorage` браузера — не требует сервера, базы данных или интернета.
 
-The app runs fully in the browser. Data, users, and the current session are stored in `localStorage`.
-The local mode is the primary runtime of the project.
+## Стек технологий
 
-## Run
+- **React 19** + **TypeScript**
+- **Tailwind CSS v4**
+- **Vite 8**
+- **React Router v7**
+- **Recharts** — графики аналитики
+- **jsPDF + html2canvas** — генерация PDF счётов
+- **xlsx** — экспорт в Excel
+- **Zustand** — управление состоянием
+- **Sonner** — уведомления (toast)
+
+---
+
+## Быстрый старт
+
+### 1. Требования
+
+| Инструмент | Версия |
+|---|---|
+| [Node.js](https://nodejs.org/) | 18+ |
+| npm | 9+ |
+
+### 2. Установка
 
 ```bash
+# Клонировать репозиторий
+git clone https://github.com/utkirov/crm-poligrafia.git
+cd crm-poligrafia
+
+# Установить зависимости
 npm install
+```
+
+### 3. Запуск (только для себя)
+
+```bash
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Откроется на `http://localhost:5173`
 
-## Demo Login
-
-- Login: `director`
-- Password: `123456`
-- Login: `financier`
-- Password: `123456`
-- Login: `manager1`
-- Password: `123456`
-- Login: `designer1`
-- Password: `123456`
-
-## Local Storage Keys
-
-- `crm-poligraf.local-db.v1`
-- `crm-poligraf.local-session.v1`
-
-Delete these keys in the browser to reset demo data.
-
-You can also manage local data from `/settings/local-data`:
-
-- export current local database to JSON
-- import a previously exported JSON snapshot
-- reset demo data
-
-## Main Files
-
-- Data layer: [src/lib/localDb.ts](/D:/utkirov/work/2026/AI/new-crm-polig/src/lib/localDb.ts)
-- Auth store: [src/store/authStore.ts](/D:/utkirov/work/2026/AI/new-crm-polig/src/store/authStore.ts)
-- User management: [src/components/UserFormModal.tsx](/D:/utkirov/work/2026/AI/new-crm-polig/src/components/UserFormModal.tsx), [src/pages/UsersPage.tsx](/D:/utkirov/work/2026/AI/new-crm-polig/src/pages/UsersPage.tsx)
-
-## Checks
+### 4. Запуск в локальной сети (для коллег по Wi-Fi/LAN)
 
 ```bash
-npm run lint
-npm run build
+npm run dev
 ```
 
-## Main Roles
+Vite автоматически выдаст **два адреса**:
 
-- `director`: full access to orders, clients, services, analytics, users, cancel reasons, and local data tools
-- `manager`: access to own orders, order creation, clients, and services
-- `financier`: access to finance and payment management
-- `designer`: employee role for monthly KPI planning and assigned production tickets
+```
+  VITE v8.x  ready
 
-## KPI
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.1.105:5173/
+```
 
-- KPI is available only to `director`
-- KPI is supported for `manager` and `designer`
-- KPI records are stored by month on `/users/:id/kpi`
-- the current stage stores only plan values
+Адрес `Network` — ваш IP в локальной сети. **Отправьте этот адрес коллегам** — они смогут открыть CRM в своём браузере, пока ваш компьютер включён.
 
-## Order Tickets
+> **Узнать свой IP вручную:**
+> - Windows: `ipconfig` → значение **IPv4-адрес**
+> - macOS/Linux: `ifconfig` или `ip a`
 
-- each order can have one production ticket
-- a ticket is created from the order card
-- a ticket has one shared status: `new -> in_progress -> done`
-- a ticket always has two assignees: `manager` and `designer`
-- `director` and `manager` can create and edit tickets
-- `designer` can open assigned tickets and update the shared status
-- ticket routes:
-  - `/tickets`
-  - `/tickets/:id`
+> **Брандмауэр Windows:** если коллеги не могут подключиться — разрешите входящие соединения для `Node.js` в настройках Брандмауэра Windows или временно его отключите.
+
+---
+
+## Вход в систему
+
+| Роль | Логин | Пароль |
+|---|---|---|
+| Директор | `director` | `123456` |
+| Менеджер | `manager1` | `123456` |
+| Дизайнер | `designer1` | `123456` |
+| Финансист | `financier` | `123456` |
+
+---
+
+## Возможности системы
+
+| Раздел | Функции |
+|---|---|
+| **Заказы** | Канбан + список, детали заказа, история изменений, PDF счёт, откат статуса |
+| **Клиенты** | Поиск, фильтр по типу (физлицо/компания/агент), кэшбэк, архивирование |
+| **Финансы** | Сводка, таблица оплат, предстоящие платежи, экспорт Excel |
+| **Аналитика** | График выручки, распределение по статусам, топ клиентов |
+| **Тикеты** | Задачи менеджеров/дизайнеров, фильтры по статусу и исполнителю |
+| **Сотрудники** | Управление ролями, KPI по месяцам |
+| **Услуги** | Дерево категорий и подкатегорий, прайс-лист |
+| **Оформление** | Тёмная/светлая тема, языки: RU / O'Z |
+
+---
+
+## Хранение данных
+
+Все данные хранятся в `localStorage` под ключом `crm-poligraf.local-db.v1`.
+
+> **Важно:** данные привязаны к конкретному браузеру и устройству.  
+> При очистке браузера данные удалятся.  
+> Для резервной копии / восстановления используйте раздел **«Локальные данные»** в боковом меню.
+
+---
+
+## Сборка для продакшена
+
+```bash
+npm run build        # собрать в папку dist/
+npm run preview      # предпросмотр собранной версии
+```
+
+Папку `dist/` можно разместить на любом статическом хостинге (Nginx, Apache, Vercel, Netlify и т.д.).
+
+---
+
+## Структура проекта
+
+```
+src/
+├── components/     # Переиспользуемые UI-компоненты
+├── hooks/          # React хуки (данные, подписки)
+├── i18n/           # Переводы (RU / UZ)
+├── layouts/        # Основной лейаут + сайдбар
+├── lib/            # localDb, toast
+├── pages/          # Страницы приложения
+├── store/          # Zustand stores (auth, settings)
+├── types/          # TypeScript типы
+└── utils/          # PDF, Excel, форматирование
+```
+
+---
+
+## Скрипты
+
+| Команда | Описание |
+|---|---|
+| `npm run dev` | Запуск dev-сервера (+ доступ из сети) |
+| `npm run build` | Продакшен-сборка |
+| `npm run preview` | Предпросмотр сборки |
+| `npm run lint` | Проверка кода (ESLint) |
+| `npm test` | Unit-тесты (Vitest) |
+| `npm run smoke` | E2E тесты (Playwright) |
