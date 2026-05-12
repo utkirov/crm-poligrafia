@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { localDb } from '../../lib/localDb'
 import { Modal } from '../../components/Modal'
 import { Input } from '../../components/Input'
 import { Button } from '../../components/Button'
@@ -15,9 +15,6 @@ interface Props {
   onSearchChange: (v: string) => void
   onRefetch: () => void
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = supabase as any
 
 export function CategoryTree({
   categories, subcategories, selectedSubcatId,
@@ -42,14 +39,14 @@ export function CategoryTree({
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) return
     setSaving(true)
-    await db.from('service_categories').insert({ name: newCatName.trim(), icon: '📦' })
+    await localDb.from('service_categories').insert({ name: newCatName.trim(), icon: 'рџ“¦' })
     setNewCatName(''); setNewCatOpen(false); setSaving(false); onRefetch()
   }
 
   const handleCreateSubcat = async () => {
     if (!newSubcatName.trim() || !newSubcatCatId) return
     setSaving(true)
-    await db.from('service_subcategories').insert({ category_id: newSubcatCatId, name: newSubcatName.trim() })
+    await localDb.from('service_subcategories').insert({ category_id: newSubcatCatId, name: newSubcatName.trim() })
     setNewSubcatName(''); setNewSubcatCatId(null); setSaving(false); onRefetch()
   }
 
@@ -93,7 +90,7 @@ export function CategoryTree({
                 onClick={() => toggleCat(cat.id)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group"
               >
-                <span className="text-base">{cat.icon ?? '📦'}</span>
+                <span className="text-base">{cat.icon ?? 'рџ“¦'}</span>
                 <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{cat.name}</span>
                 <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">{cat.totalServices}</span>
                 <button
@@ -155,10 +152,10 @@ export function CategoryTree({
                     className="flex-1 px-2 py-1 border border-blue-300 dark:border-blue-600 rounded text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                   <button onClick={handleCreateSubcat} disabled={saving || !newSubcatName.trim()} className="text-blue-600 dark:text-blue-400 text-xs font-medium cursor-pointer hover:underline">
-                    ОК
+                    РћРљ
                   </button>
                   <button onClick={() => setNewSubcatCatId(null)} className="text-slate-400 text-xs cursor-pointer hover:text-slate-600 dark:hover:text-slate-300">
-                    ✕
+                    вњ•
                   </button>
                 </div>
               )}

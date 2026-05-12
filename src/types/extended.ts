@@ -1,6 +1,7 @@
 import type {
   Order, Client, Profile, OrderItem, Service,
   ServiceSubcategory, ServiceCategory, Payment, OrderTimelineEntry,
+  OrderTicket,
 } from './database'
 
 export interface OrderWithClient extends Order {
@@ -24,7 +25,14 @@ export interface TimelineEntryWithUser extends OrderTimelineEntry {
 }
 
 export interface ClientWithReferrer extends Client {
-  referrer: Pick<Client, 'id' | 'name' | 'cashback_percent'> | null
+  referrer: Pick<Client, 'id' | 'name' | 'cashback_percent' | 'cashback_balance'> | null
+}
+
+export interface OrderTicketDetail extends OrderTicket {
+  order: OrderWithClient
+  manager_assignee: Pick<Profile, 'id' | 'name'>
+  designer_assignee: Pick<Profile, 'id' | 'name'>
+  created_by_user: Pick<Profile, 'id' | 'name'>
 }
 
 export interface OrderDetail extends Omit<Order, ''> {
@@ -34,4 +42,5 @@ export interface OrderDetail extends Omit<Order, ''> {
   order_items: OrderItemFull[]
   payments: Payment[]
   order_timeline: TimelineEntryWithUser[]
+  order_ticket?: OrderTicketDetail | null
 }

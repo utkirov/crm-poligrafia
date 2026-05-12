@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { localDb } from '../../lib/localDb'
 import { Modal } from '../../components/Modal'
 import { Input } from '../../components/Input'
 import { Button } from '../../components/Button'
@@ -17,9 +17,6 @@ interface Props {
   search: string
   onRefetch: () => void
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = supabase as any
 
 export function ServicesList({ subcategory, category, services, search, onRefetch }: Props) {
   const t = useT()
@@ -68,7 +65,7 @@ export function ServicesList({ subcategory, category, services, search, onRefetc
   const handleAdd = async () => {
     if (!newName.trim()) return
     setAdding(true)
-    await db.from('services').insert({
+    await localDb.from('services').insert({
       subcategory_id: subcategory.id,
       name: newName.trim(),
       is_archived: false,
@@ -79,12 +76,12 @@ export function ServicesList({ subcategory, category, services, search, onRefetc
   }
 
   const handleArchive = async (s: ServiceWithUsage) => {
-    await db.from('services').update({ is_archived: true }).eq('id', s.id)
+    await localDb.from('services').update({ is_archived: true }).eq('id', s.id)
     onRefetch()
   }
 
   const handleRestore = async (s: ServiceWithUsage) => {
-    await db.from('services').update({ is_archived: false }).eq('id', s.id)
+    await localDb.from('services').update({ is_archived: false }).eq('id', s.id)
     onRefetch()
   }
 
@@ -98,7 +95,7 @@ export function ServicesList({ subcategory, category, services, search, onRefetc
   const handleEditSave = async () => {
     if (!editService || !editName.trim()) return
     setSaving(true)
-    await db.from('services').update({
+    await localDb.from('services').update({
       name: editName.trim(),
       unit_of_measure: editUnit,
       price_per_unit: parsePriceInput(editPrice),
@@ -109,7 +106,7 @@ export function ServicesList({ subcategory, category, services, search, onRefetc
   const handleEditSubcat = async () => {
     if (!editSubcatName.trim()) return
     setSaving(true)
-    await db.from('service_subcategories').update({ name: editSubcatName.trim() }).eq('id', subcategory.id)
+    await localDb.from('service_subcategories').update({ name: editSubcatName.trim() }).eq('id', subcategory.id)
     setSaving(false); setEditSubcatOpen(false); onRefetch()
   }
 
@@ -119,8 +116,8 @@ export function ServicesList({ subcategory, category, services, search, onRefetc
       <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-between transition-colors duration-200">
         <div>
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-0.5">
-            <span>{category?.name ?? '—'}</span>
-            <span className="text-slate-300 dark:text-slate-600">→</span>
+            <span>{category?.name ?? 'вЂ”'}</span>
+            <span className="text-slate-300 dark:text-slate-600">в†’</span>
             <span className="font-medium text-slate-900 dark:text-slate-100">{subcategory.name}</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">

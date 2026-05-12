@@ -15,6 +15,9 @@ export interface OrderItemDraft {
   id: string
   serviceId: string
   serviceName: string
+  categoryName: string
+  subcategoryName: string
+  unitLabel: string
   quantity: string
   pricePerUnit: string
   totalPrice: string

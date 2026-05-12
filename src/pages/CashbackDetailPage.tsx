@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { localDb } from '../lib/localDb'
 import { useClient } from '../hooks/useClient'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Badge } from '../components/Badge'
@@ -25,7 +25,7 @@ export function CashbackDetailPage() {
     if (!id) return
     const load = async () => {
       setTxLoading(true)
-      const { data } = await supabase
+      const { data } = await localDb
         .from('cashback_transactions')
         .select('*, order:orders(*, client:clients(id, name))')
         .eq('client_id', id)
@@ -81,7 +81,7 @@ export function CashbackDetailPage() {
           ))}
         </div>
 
-        {/* Table 1 — Own orders */}
+        {/* Table 1 вЂ” Own orders */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t.cashbackDetail.ownCashbackTitle}</h3>
@@ -97,10 +97,10 @@ export function CashbackDetailPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {ownTx.map((tx) => (
                 <tr key={tx.id} onClick={() => tx.order && navigate(`/orders/${tx.order.id}`)} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
-                  <td className="px-4 py-3 text-slate-400 dark:text-slate-500 font-mono text-xs">#{tx.order?.order_number ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.title ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-400 dark:text-slate-500 font-mono text-xs">#{tx.order?.order_number ?? 'вЂ”'}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.title ?? 'вЂ”'}</td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatDate(tx.created_at)}</td>
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order ? formatCurrency(tx.order.total_amount) : '—'}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order ? formatCurrency(tx.order.total_amount) : 'вЂ”'}</td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{client.cashback_percent}%</td>
                   <td className="px-4 py-3 font-medium text-green-600">{formatCurrency(tx.amount)}</td>
                   <td className="px-4 py-3">
@@ -126,7 +126,7 @@ export function CashbackDetailPage() {
           </table>
         </div>
 
-        {/* Table 2 — Referral cashback */}
+        {/* Table 2 вЂ” Referral cashback */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t.cashbackDetail.referralCashbackTitle}</h3>
@@ -142,11 +142,11 @@ export function CashbackDetailPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {referralTx.map((tx) => (
                 <tr key={tx.id} onClick={() => tx.order && navigate(`/orders/${tx.order.id}`)} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.client?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-400 dark:text-slate-500 font-mono text-xs">#{tx.order?.order_number ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.title ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.client?.name ?? 'вЂ”'}</td>
+                  <td className="px-4 py-3 text-slate-400 dark:text-slate-500 font-mono text-xs">#{tx.order?.order_number ?? 'вЂ”'}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.title ?? 'вЂ”'}</td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatDate(tx.created_at)}</td>
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order ? formatCurrency(tx.order.total_amount) : '—'}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order ? formatCurrency(tx.order.total_amount) : 'вЂ”'}</td>
                   <td className="px-4 py-3 font-medium text-teal-600">{formatCurrency(tx.amount)}</td>
                 </tr>
               ))}
@@ -165,7 +165,7 @@ export function CashbackDetailPage() {
           </table>
         </div>
 
-        {/* Table 3 — Spent */}
+        {/* Table 3 вЂ” Spent */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t.cashbackDetail.deductionsTitle}</h3>
@@ -181,10 +181,10 @@ export function CashbackDetailPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {spentTx.map((tx) => (
                 <tr key={tx.id} onClick={() => tx.order && navigate(`/orders/${tx.order.id}`)} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
-                  <td className="px-4 py-3 text-slate-400 dark:text-slate-500 font-mono text-xs">#{tx.order?.order_number ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.title ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-400 dark:text-slate-500 font-mono text-xs">#{tx.order?.order_number ?? 'вЂ”'}</td>
+                  <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{tx.order?.title ?? 'вЂ”'}</td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{formatDate(tx.created_at)}</td>
-                  <td className="px-4 py-3 font-medium text-red-500">−{formatCurrency(tx.amount)}</td>
+                  <td className="px-4 py-3 font-medium text-red-500">в€’{formatCurrency(tx.amount)}</td>
                   <td className="px-4 py-3"><Badge color="red">{t.cashbackDetail.appliedBadge}</Badge></td>
                 </tr>
               ))}
@@ -196,7 +196,7 @@ export function CashbackDetailPage() {
               <tfoot>
                 <tr className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                   <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{t.cashbackDetail.totalDeductedLabel}</td>
-                  <td className="px-4 py-3 font-bold text-red-500">−{formatCurrency(totalSpent)}</td>
+                  <td className="px-4 py-3 font-bold text-red-500">в€’{formatCurrency(totalSpent)}</td>
                   <td />
                 </tr>
               </tfoot>

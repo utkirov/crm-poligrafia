@@ -2,7 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AuthUser, UserRole } from '../types'
 import type { Profile } from '../types/database'
-import { supabase } from '../lib/supabase'
+import { localDb } from '../lib/localDb'
+
+interface AuthSession {
+  user: {
+    id: string
+    email?: string
+  }
+}
 
 interface AuthState {
   user: AuthUser | null
@@ -18,7 +25,37 @@ function profileToUser(profile: Profile, email: string | undefined): AuthUser {
     email,
     name: profile.name,
     role: profile.role as UserRole,
+    is_active: profile.is_active,
   }
+}
+
+let authListenerBound = false
+
+async function syncUserFromSession(
+  session: AuthSession | null,
+  set: (partial: Partial<AuthState>) => void,
+) {
+  if (!session?.user) {
+    set({ user: null, loading: false })
+    return
+  }
+
+  const { data: profile } = await localDb
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!profile || !profile.is_active) {
+    await localDb.auth.signOut()
+    set({ user: null, loading: false })
+    return
+  }
+
+  set({
+    user: profileToUser(profile, session.user.email),
+    loading: false,
+  })
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,42 +66,49 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         set({ loading: true })
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          if (profile) {
-            set({ user: profileToUser(profile, session.user.email), loading: false })
-            return
-          }
+
+        if (!authListenerBound) {
+          localDb.auth.onAuthStateChange((_event, session) => {
+            void syncUserFromSession(session, set)
+          })
+          authListenerBound = true
         }
-        set({ user: null, loading: false })
+
+        const {
+          data: { session },
+        } = await localDb.auth.getSession()
+
+        await syncUserFromSession(session, set)
       },
 
       login: async (login: string, password: string) => {
         const email = `${login}@crm.internal`
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await localDb.auth.signInWithPassword({ email, password })
         if (error || !data.user) {
-          return 'Неверный логин или пароль'
+          return 'invalidCreds'
         }
-        const { data: profile } = await supabase
+        const { data: profile } = await localDb
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single()
         if (!profile) {
-          await supabase.auth.signOut()
-          return 'Профиль пользователя не найден'
+          await localDb.auth.signOut()
+          return 'profileNotFound'
         }
-        set({ user: profileToUser(profile, data.user.email) })
+        if (!profile.is_active) {
+          await localDb.auth.signOut()
+          return 'accountDisabled'
+        }
+        set({
+          user: profileToUser(profile, data.user.email),
+          loading: false,
+        })
         return null
       },
 
       logout: async () => {
-        await supabase.auth.signOut()
+        await localDb.auth.signOut()
         set({ user: null })
       },
     }),

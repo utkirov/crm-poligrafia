@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { localDb } from '../lib/localDb'
 import { Modal } from './Modal'
 import { Input } from './Input'
 import { Button } from './Button'
@@ -7,9 +7,6 @@ import { PriceInput } from './PriceInput'
 import { formatPriceInput, parsePriceInput } from '../utils/priceInput'
 import { useT } from '../i18n'
 import type { ServiceCategory, ServiceSubcategory } from '../types'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = supabase as any
 
 interface Props {
   open: boolean
@@ -70,27 +67,27 @@ export function AddServiceModal({ open, onClose, onSaved, categories, subcategor
     // 1. Resolve category
     let resolvedCatId = catId
     if (isCreatingCat) {
-      const { data } = await db
+      const { data } = await localDb
         .from('service_categories')
         .insert({ name: newCatName.trim(), icon: '📦' })
         .select()
         .single()
-      resolvedCatId = data.id
+      resolvedCatId = (data as { id: string } | null)?.id ?? resolvedCatId
     }
 
     // 2. Resolve subcategory
     let resolvedSubcatId = subcatId
     if (isCreatingSubcat) {
-      const { data } = await db
+      const { data } = await localDb
         .from('service_subcategories')
         .insert({ category_id: resolvedCatId, name: newSubcatName.trim() })
         .select()
         .single()
-      resolvedSubcatId = data.id
+      resolvedSubcatId = (data as { id: string } | null)?.id ?? resolvedSubcatId
     }
 
     // 3. Create service
-    await db.from('services').insert({
+    await localDb.from('services').insert({
       subcategory_id: resolvedSubcatId,
       name: name.trim(),
       unit_of_measure: unit,
@@ -114,7 +111,7 @@ export function AddServiceModal({ open, onClose, onSaved, categories, subcategor
     <Modal open={open} onClose={handleClose} title={t.services.addServiceTitle} className="max-w-md">
       <div className="flex flex-col gap-4">
 
-        {/* ── Category ─────────────────────────────────── */}
+        {/* в”Ђв”Ђ Category в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             {t.stepOrder.categoryLabel} <span className="text-red-500">*</span>
@@ -141,7 +138,7 @@ export function AddServiceModal({ open, onClose, onSaved, categories, subcategor
           )}
         </div>
 
-        {/* ── Subcategory ───────────────────────────────── */}
+        {/* в”Ђв”Ђ Subcategory в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
             {t.stepOrder.subcategoryLabel} <span className="text-red-500">*</span>
@@ -169,15 +166,15 @@ export function AddServiceModal({ open, onClose, onSaved, categories, subcategor
           )}
         </div>
 
-        {/* ── Service name ──────────────────────────────── */}
+        {/* в”Ђв”Ђ Service name в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <Input
-          label={`${t.services.addServiceTitle} — ${t.common.name} *`}
+          label={`${t.services.addServiceTitle} вЂ” ${t.common.name} *`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t.services.newServicePlaceholder}
         />
 
-        {/* ── Unit + Price ──────────────────────────────── */}
+        {/* в”Ђв”Ђ Unit + Price в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.services.unitLabel}</label>
@@ -200,7 +197,7 @@ export function AddServiceModal({ open, onClose, onSaved, categories, subcategor
           />
         </div>
 
-        {/* ── Actions ───────────────────────────────────── */}
+        {/* в”Ђв”Ђ Actions в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="secondary" onClick={handleClose}>{t.common.cancel}</Button>
           <Button onClick={handleSave} loading={saving} disabled={!canSave}>

@@ -77,8 +77,7 @@ export function OrderDetailPage() {
   const overdue = isOverdue(order.deadline)
   const canManageOrder = user?.role === 'director' || user?.role === 'manager'
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = localDb as any
+
 
   const handleNextStatus = async () => {
     const nextStatus = NEXT_STATUS[order.status]
@@ -88,8 +87,8 @@ export function OrderDetailPage() {
 
     setTransitioning(true)
 
-    await db.from('orders').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', order.id)
-    await db.from('order_timeline').insert({
+    await localDb.from('orders').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', order.id)
+    await localDb.from('order_timeline').insert({
       order_id: order.id,
       user_id: user!.id,
       event_type: 'status_changed',
@@ -108,10 +107,10 @@ export function OrderDetailPage() {
           .limit(1)
 
         if (!((existingOwnCashback as unknown as unknown[] | null)?.length)) {
-          await db.from('clients').update({
+          await localDb.from('clients').update({
             cashback_balance: order.client.cashback_balance + cashback,
           }).eq('id', order.client.id)
-          await db.from('cashback_transactions').insert({
+          await localDb.from('cashback_transactions').insert({
             client_id: order.client.id,
             order_id: order.id,
             type: 'earned_own',
@@ -130,10 +129,10 @@ export function OrderDetailPage() {
 
         if (!((existingReferralCashback as unknown as unknown[] | null)?.length)) {
           const referrerBalance = (order.client.referrer as { cashback_balance?: number }).cashback_balance ?? 0
-          await db.from('clients').update({
+          await localDb.from('clients').update({
             cashback_balance: referrerBalance + order.referrer_cashback,
           }).eq('id', order.client.referrer.id)
-          await db.from('cashback_transactions').insert({
+          await localDb.from('cashback_transactions').insert({
             client_id: order.client.referrer.id,
             order_id: order.id,
             type: 'earned_referral',
@@ -155,14 +154,14 @@ export function OrderDetailPage() {
 
     setTransitioning(true)
 
-    await db.from('orders').update({
+    await localDb.from('orders').update({
       status: 'cancelled',
       cancel_reason: cancelReasonText,
       cancel_comment: cancelComment,
       updated_at: new Date().toISOString(),
     }).eq('id', order.id)
 
-    await db.from('order_timeline').insert({
+    await localDb.from('order_timeline').insert({
       order_id: order.id,
       user_id: user!.id,
       event_type: 'cancelled',
@@ -174,7 +173,7 @@ export function OrderDetailPage() {
       if (profiles) {
         const rows = profiles as { id: string }[]
         for (const profile of rows) {
-          await db.from('notifications').insert({
+          await localDb.from('notifications').insert({
             user_id: profile.id,
             type: 'order_cancelled',
             order_id: order.id,

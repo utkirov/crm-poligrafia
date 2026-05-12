@@ -1,15 +1,18 @@
-export type UserRole = 'director' | 'financier'
+export type UserRole = 'director' | 'financier' | 'manager' | 'designer'
 export type ClientType = 'individual' | 'company' | 'agent'
 export type OrderStatus = 'new' | 'in_progress' | 'ready' | 'completed' | 'cancelled'
 export type OrderPriority = 'low' | 'medium' | 'high'
 export type PaymentType = 'cash' | 'transfer' | 'bank_transfer'
 export type CashbackType = 'earned_own' | 'earned_referral' | 'spent'
 export type TimelineEventType = 'created' | 'status_changed' | 'comment' | 'payment' | 'cancelled'
+export type OrderTicketStatus = 'new' | 'in_progress' | 'done'
 
 export interface Profile {
   id: string
   name: string
   role: UserRole
+  login: string | null
+  is_active: boolean
   created_at: string
 }
 
@@ -126,6 +129,35 @@ export interface CancelReason {
   created_at: string
 }
 
+export interface MonthlyKpi {
+  id: string
+  user_id: string
+  month: string
+  role: 'manager' | 'designer'
+  sales_plan: number | null
+  orders_plan: number | null
+  new_clients_plan: number | null
+  tasks_plan: number | null
+  on_time_rate_plan: number | null
+  revision_limit_plan: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OrderTicket {
+  id: string
+  order_id: string
+  title: string
+  description: string | null
+  status: OrderTicketStatus
+  manager_assignee_id: string
+  designer_assignee_id: string
+  deadline: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
 type TableDef<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row
   Insert: Insert
@@ -148,6 +180,16 @@ export interface Database {
       cashback_transactions: TableDef<CashbackTransaction, Omit<CashbackTransaction, 'id' | 'created_at'>>
       notifications: TableDef<Notification, Omit<Notification, 'id' | 'created_at'>>
       cancel_reasons: TableDef<CancelReason, Omit<CancelReason, 'id' | 'created_at'>, Partial<Omit<CancelReason, 'id' | 'created_at'>>>
+      monthly_kpis: TableDef<
+        MonthlyKpi,
+        Omit<MonthlyKpi, 'id' | 'created_at' | 'updated_at'>,
+        Partial<Omit<MonthlyKpi, 'id' | 'created_at' | 'updated_at'>>
+      >
+      order_tickets: TableDef<
+        OrderTicket,
+        Omit<OrderTicket, 'id' | 'created_at' | 'updated_at'>,
+        Partial<Omit<OrderTicket, 'id' | 'created_at' | 'updated_at'>>
+      >
     }
     Views: Record<string, never>
     Functions: Record<string, never>

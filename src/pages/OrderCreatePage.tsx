@@ -45,9 +45,6 @@ export function OrderCreatePage() {
     setIsDirty(true)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = localDb as any
-
   const steps = [
     { label: t.orderCreate.stepClient, key: 'client' },
     { label: t.orderCreate.stepOrder, key: 'order' },
@@ -78,7 +75,7 @@ export function OrderCreatePage() {
 
       if (!clientId) {
         const fullName = `${form.newClient.name.trim()} ${form.newClient.lastName.trim()}`.trim()
-        const { data: newClient, error: clientError } = await db
+        const { data: newClientData, error: clientError } = await localDb
           .from('clients')
           .insert({
             name: fullName,
@@ -94,6 +91,7 @@ export function OrderCreatePage() {
           .select()
           .single()
 
+        const newClient = newClientData as { id: string } | null
         if (clientError || !newClient) {
           setErrors([`${t.orderCreate.errorClient}: ${clientError?.message ?? t.common.error}`])
           setSubmitting(false)
@@ -124,7 +122,7 @@ export function OrderCreatePage() {
         referrerCashback = Math.round(total * referrer.cashback_percent / 100)
       }
 
-      const { data: order, error: orderError } = await db
+      const { data: orderData, error: orderError } = await localDb
         .from('orders')
         .insert({
           client_id: clientId,
@@ -143,6 +141,7 @@ export function OrderCreatePage() {
         .select()
         .single()
 
+      const order = orderData as { id: string } | null
       if (orderError || !order) {
         setErrors([`${t.orderCreate.errorOrder}: ${orderError?.message ?? t.common.error}`])
         setSubmitting(false)
@@ -150,10 +149,10 @@ export function OrderCreatePage() {
       }
 
       if (cashbackApplied > 0 && form.selectedClient) {
-        await db.from('clients').update({
+        await localDb.from('clients').update({
           cashback_balance: calculateCashbackBalanceAfterApply(form.selectedClient.cashback_balance, total),
         }).eq('id', clientId)
-        await db.from('cashback_transactions').insert({
+        await localDb.from('cashback_transactions').insert({
           client_id: clientId,
           order_id: order.id,
           type: 'spent',
@@ -162,7 +161,7 @@ export function OrderCreatePage() {
       }
 
       if (form.orderItems.length > 0) {
-        await db.from('order_items').insert(
+        await localDb.from('order_items').insert(
           form.orderItems.map((item) => ({
             order_id: order.id,
             service_id: item.serviceId || null,
@@ -175,7 +174,7 @@ export function OrderCreatePage() {
       }
 
       if (validPayments.length > 0) {
-        await db.from('payments').insert(
+        await localDb.from('payments').insert(
           validPayments.map((payment) => ({
             order_id: order.id,
             amount: parsePriceInput(payment.amount),
@@ -186,7 +185,7 @@ export function OrderCreatePage() {
         )
       }
 
-      await db.from('order_timeline').insert({
+      await localDb.from('order_timeline').insert({
         order_id: order.id,
         user_id: user!.id,
         event_type: 'created',

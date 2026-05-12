@@ -185,9 +185,6 @@ export function StepOrder({ form, onChange }: Props) {
   const [newSvcSubcat, setNewSvcSubcat] = useState('')
   const [savingNew, setSavingNew] = useState(false)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = localDb as any
-
   const categoryMap = useMemo(
     () => Object.fromEntries(categories.map((category) => [category.id, category])),
     [categories],
@@ -260,7 +257,7 @@ export function StepOrder({ form, onChange }: Props) {
 
     setSavingNew(true)
 
-    const { data } = await db
+    const { data } = await localDb
       .from('services')
       .insert({
         subcategory_id: newSvcSubcat,

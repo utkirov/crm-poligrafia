@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
-import type { ServiceCategory, ServiceSubcategory, Service } from '../types'
+import { useCallback, useEffect, useState } from 'react'
+import { localDb } from '../lib/localDb'
+import type { Service, ServiceCategory, ServiceSubcategory } from '../types'
 
 export interface ServiceWithUsage extends Service {
   usageCount: number
@@ -14,51 +14,80 @@ export interface CategoryWithCount extends ServiceCategory {
   totalServices: number
 }
 
+async function loadServiceManagementData() {
+  const [categoriesRes, subcategoriesRes, servicesRes, usageRes] = await Promise.all([
+    localDb.from('service_categories').select('*').order('name'),
+    localDb.from('service_subcategories').select('*').order('name'),
+    localDb.from('services').select('*').order('name'),
+    localDb.from('order_items').select('service_id'),
+  ])
+
+  const usageMap: Record<string, number> = {}
+  for (const row of (usageRes.data ?? []) as { service_id: string | null }[]) {
+    if (row.service_id) {
+      usageMap[row.service_id] = (usageMap[row.service_id] ?? 0) + 1
+    }
+  }
+
+  const services = ((servicesRes.data ?? []) as Service[]).map((service) => ({
+    ...service,
+    usageCount: usageMap[service.id] ?? 0,
+  }))
+
+  const subcategories = ((subcategoriesRes.data ?? []) as ServiceSubcategory[]).map((subcategory) => ({
+    ...subcategory,
+    serviceCount: services.filter((service) => service.subcategory_id === subcategory.id && !service.is_archived).length,
+  }))
+
+  const categories = ((categoriesRes.data ?? []) as ServiceCategory[]).map((category) => {
+    const subcategoryIds = subcategories
+      .filter((subcategory) => subcategory.category_id === category.id)
+      .map((subcategory) => subcategory.id)
+
+    return {
+      ...category,
+      totalServices: services.filter(
+        (service) => subcategoryIds.includes(service.subcategory_id) && !service.is_archived,
+      ).length,
+    }
+  })
+
+  return { categories, subcategories, services }
+}
+
 export function useServiceManagement() {
   const [categories, setCategories] = useState<CategoryWithCount[]>([])
   const [subcategories, setSubcategories] = useState<SubcategoryWithCount[]>([])
   const [services, setServices] = useState<ServiceWithUsage[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetch = useCallback(async () => {
+  const fetchServiceManagement = useCallback(async () => {
     setLoading(true)
-    const [catsRes, subsRes, svcsRes, usageRes] = await Promise.all([
-      supabase.from('service_categories').select('*').order('name'),
-      supabase.from('service_subcategories').select('*').order('name'),
-      supabase.from('services').select('*').order('name'),
-      supabase.from('order_items').select('service_id'),
-    ])
-
-    const usageMap: Record<string, number> = {}
-    for (const row of (usageRes.data ?? []) as { service_id: string | null }[]) {
-      if (row.service_id) usageMap[row.service_id] = (usageMap[row.service_id] ?? 0) + 1
-    }
-
-    const svcs = ((svcsRes.data ?? []) as Service[]).map((s) => ({
-      ...s,
-      usageCount: usageMap[s.id] ?? 0,
-    }))
-
-    const subs = ((subsRes.data ?? []) as ServiceSubcategory[]).map((sub) => ({
-      ...sub,
-      serviceCount: svcs.filter((s) => s.subcategory_id === sub.id && !s.is_archived).length,
-    }))
-
-    const cats = ((catsRes.data ?? []) as ServiceCategory[]).map((cat) => {
-      const catSubIds = subs.filter((s) => s.category_id === cat.id).map((s) => s.id)
-      return {
-        ...cat,
-        totalServices: svcs.filter((s) => catSubIds.includes(s.subcategory_id) && !s.is_archived).length,
-      }
-    })
-
-    setCategories(cats)
-    setSubcategories(subs)
-    setServices(svcs)
+    const nextData = await loadServiceManagementData()
+    setCategories(nextData.categories)
+    setSubcategories(nextData.subcategories)
+    setServices(nextData.services)
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    let cancelled = false
 
-  return { categories, subcategories, services, loading, refetch: fetch }
+    const load = async () => {
+      const nextData = await loadServiceManagementData()
+      if (cancelled) return
+      setCategories(nextData.categories)
+      setSubcategories(nextData.subcategories)
+      setServices(nextData.services)
+      setLoading(false)
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return { categories, subcategories, services, loading, refetch: fetchServiceManagement }
 }

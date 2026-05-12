@@ -19,7 +19,7 @@ export function formatNumber(value: number): string {
 }
 
 export function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: '2-digit',
@@ -28,7 +28,7 @@ export function formatDate(dateStr: string | null | undefined): string {
 }
 
 export function formatDateTime(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: '2-digit',

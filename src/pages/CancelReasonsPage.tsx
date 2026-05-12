@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { useCallback, useEffect, useState } from 'react'
+import { localDb } from '../lib/localDb'
 import { Button } from '../components/Button'
 import { Modal } from '../components/Modal'
 import { Spinner } from '../components/Spinner'
@@ -12,47 +12,87 @@ interface CancelReason {
   created_at: string
 }
 
+async function loadCancelReasons() {
+  const { data } = await localDb
+    .from('cancel_reasons')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  return (data ?? []) as CancelReason[]
+}
+
 export function CancelReasonsPage() {
   const t = useT()
-  const [reasons, setReasons]     = useState<CancelReason[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [addOpen, setAddOpen]     = useState(false)
+  const [reasons, setReasons] = useState<CancelReason[]>([])
+  const [loading, setLoading] = useState(true)
+  const [addOpen, setAddOpen] = useState(false)
   const [editReason, setEditReason] = useState<CancelReason | null>(null)
-  const [text, setText]           = useState('')
-  const [saving, setSaving]       = useState(false)
+  const [text, setText] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
-
-  const fetch = useCallback(async () => {
+  const fetchReasons = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase.from('cancel_reasons').select('*').order('created_at', { ascending: true })
-    setReasons((data ?? []) as CancelReason[])
+    const nextReasons = await loadCancelReasons()
+    setReasons(nextReasons)
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    let cancelled = false
 
-  const openAdd  = () => { setText(''); setAddOpen(true) }
-  const openEdit = (r: CancelReason) => { setEditReason(r); setText(r.reason) }
-  const closeModals = () => { setAddOpen(false); setEditReason(null); setText('') }
+    const load = async () => {
+      const nextReasons = await loadCancelReasons()
+      if (cancelled) return
+      setReasons(nextReasons)
+      setLoading(false)
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const openAdd = () => {
+    setText('')
+    setAddOpen(true)
+  }
+
+  const openEdit = (reason: CancelReason) => {
+    setEditReason(reason)
+    setText(reason.reason)
+  }
+
+  const closeModals = () => {
+    setAddOpen(false)
+    setEditReason(null)
+    setText('')
+  }
 
   const handleSave = async () => {
     if (!text.trim()) return
+
     setSaving(true)
+
     if (editReason) {
-      await db.from('cancel_reasons').update({ reason: text.trim() }).eq('id', editReason.id)
+      await localDb.from('cancel_reasons').update({ reason: text.trim() }).eq('id', editReason.id)
     } else {
-      await db.from('cancel_reasons').insert({ reason: text.trim() })
+      await localDb.from('cancel_reasons').insert({ reason: text.trim() })
     }
+
     setSaving(false)
     closeModals()
-    fetch()
+    await fetchReasons()
   }
 
-  const toggleActive = async (r: CancelReason) => {
-    await db.from('cancel_reasons').update({ is_active: !r.is_active }).eq('id', r.id)
-    fetch()
+  const toggleActive = async (reason: CancelReason) => {
+    await localDb
+      .from('cancel_reasons')
+      .update({ is_active: !reason.is_active })
+      .eq('id', reason.id)
+
+    await fetchReasons()
   }
 
   return (
@@ -80,37 +120,48 @@ export function CancelReasonsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
                   <tr>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t.cancelReasons.colReason}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t.cancelReasons.colStatus}</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t.common.actions}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.cancelReasons.colReason}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.cancelReasons.colStatus}
+                    </th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      {t.common.actions}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {reasons.map((r) => (
-                    <tr key={r.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!r.is_active ? 'opacity-50' : ''}`}>
-                      <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.reason}</td>
+                  {reasons.map((reason) => (
+                    <tr
+                      key={reason.id}
+                      className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!reason.is_active ? 'opacity-50' : ''}`}
+                    >
+                      <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{reason.reason}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          r.is_active
-                            ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                        }`}>
-                          {r.is_active ? t.cancelReasons.active : t.cancelReasons.inactive}
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            reason.is_active
+                              ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {reason.is_active ? t.cancelReasons.active : t.cancelReasons.inactive}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => openEdit(r)}
+                            onClick={() => openEdit(reason)}
                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                           >
                             {t.common.edit}
                           </button>
                           <button
-                            onClick={() => toggleActive(r)}
+                            onClick={() => toggleActive(reason)}
                             className="text-xs text-slate-500 dark:text-slate-400 hover:underline cursor-pointer"
                           >
-                            {r.is_active ? t.cancelReasons.disable : t.cancelReasons.enable}
+                            {reason.is_active ? t.cancelReasons.disable : t.cancelReasons.enable}
                           </button>
                         </div>
                       </td>
@@ -131,12 +182,14 @@ export function CancelReasonsPage() {
       >
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1">{t.cancelReasons.reasonLabel}</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1">
+              {t.cancelReasons.reasonLabel}
+            </label>
             <input
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              onKeyDown={(e) => e.key === 'Enter' && void handleSave()}
               placeholder={t.cancelReasons.reasonPlaceholder}
               autoFocus
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400"

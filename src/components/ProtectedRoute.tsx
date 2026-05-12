@@ -25,7 +25,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const fallback = user.role === 'director' ? '/dashboard' : '/finance'
+    const fallback = user.role === 'financier' ? '/finance' : user.role === 'designer' ? '/tickets' : '/dashboard'
     return <Navigate to={fallback} replace />
   }
 

@@ -15,11 +15,16 @@ const CashbackDetailPage = lazy(() => import('./pages/CashbackDetailPage').then(
 const ServicesPage       = lazy(() => import('./pages/ServicesPage').then(m => ({ default: m.ServicesPage })))
 const FinancePage        = lazy(() => import('./pages/FinancePage').then(m => ({ default: m.FinancePage })))
 const CancelReasonsPage  = lazy(() => import('./pages/CancelReasonsPage').then(m => ({ default: m.CancelReasonsPage })))
+const LocalDataPage      = lazy(() => import('./pages/LocalDataPage').then(m => ({ default: m.LocalDataPage })))
 const OrderEditPage      = lazy(() => import('./pages/OrderEditPage').then(m => ({ default: m.OrderEditPage })))
 const OrderDetailPage    = lazy(() => import('./pages/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })))
 const OrderCreatePage    = lazy(() => import('./pages/OrderCreatePage').then(m => ({ default: m.OrderCreatePage })))
 const PaymentsPage       = lazy(() => import('./pages/PaymentsPage').then(m => ({ default: m.PaymentsPage })))
 const AnalyticsPage      = lazy(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
+const UsersPage          = lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })))
+const UserKpiPage        = lazy(() => import('./pages/UserKpiPage').then(m => ({ default: m.UserKpiPage })))
+const OrderTicketsPage   = lazy(() => import('./pages/OrderTicketsPage').then(m => ({ default: m.OrderTicketsPage })))
+const OrderTicketDetailPage = lazy(() => import('./pages/OrderTicketDetailPage').then(m => ({ default: m.OrderTicketDetailPage })))
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
 
 const PageLoader = () => (
@@ -60,28 +65,38 @@ function App() {
           <Route element={<MainLayout />}>
             {/* Director only */}
             <Route path="/dashboard"
-              element={<ProtectedRoute allowedRoles={['director']}><S><DashboardPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><DashboardPage /></S></ProtectedRoute>} />
             <Route path="/orders/create"
-              element={<ProtectedRoute allowedRoles={['director']}><S><OrderCreatePage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><OrderCreatePage /></S></ProtectedRoute>} />
             <Route path="/orders/:id"
-              element={<ProtectedRoute allowedRoles={['director']}><S><OrderDetailPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager', 'designer']}><S><OrderDetailPage /></S></ProtectedRoute>} />
             <Route path="/orders/:id/edit"
-              element={<ProtectedRoute allowedRoles={['director']}><S><OrderEditPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><OrderEditPage /></S></ProtectedRoute>} />
             <Route path="/orders/:id/payments"
-              element={<ProtectedRoute allowedRoles={['director', 'financier']}><S><PaymentsPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'financier', 'manager']}><S><PaymentsPage /></S></ProtectedRoute>} />
+            <Route path="/tickets"
+              element={<ProtectedRoute allowedRoles={['director', 'manager', 'designer']}><S><OrderTicketsPage /></S></ProtectedRoute>} />
+            <Route path="/tickets/:id"
+              element={<ProtectedRoute allowedRoles={['director', 'manager', 'designer']}><S><OrderTicketDetailPage /></S></ProtectedRoute>} />
             <Route path="/clients"
-              element={<ProtectedRoute allowedRoles={['director']}><S><ClientsPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><ClientsPage /></S></ProtectedRoute>} />
             <Route path="/clients/:id"
-              element={<ProtectedRoute allowedRoles={['director']}><S><ClientDetailPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><ClientDetailPage /></S></ProtectedRoute>} />
             <Route path="/clients/:id/cashback"
-              element={<ProtectedRoute allowedRoles={['director']}><S><CashbackDetailPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><CashbackDetailPage /></S></ProtectedRoute>} />
             <Route path="/services"
-              element={<ProtectedRoute allowedRoles={['director']}><S><ServicesPage /></S></ProtectedRoute>} />
+              element={<ProtectedRoute allowedRoles={['director', 'manager']}><S><ServicesPage /></S></ProtectedRoute>} />
             <Route path="/settings/cancel-reasons"
               element={<ProtectedRoute allowedRoles={['director']}><S><CancelReasonsPage /></S></ProtectedRoute>} />
+            <Route path="/settings/local-data"
+              element={<ProtectedRoute allowedRoles={['director']}><S><LocalDataPage /></S></ProtectedRoute>} />
 
             <Route path="/analytics"
               element={<ProtectedRoute allowedRoles={['director']}><S><AnalyticsPage /></S></ProtectedRoute>} />
+            <Route path="/users"
+              element={<ProtectedRoute allowedRoles={['director']}><S><UsersPage /></S></ProtectedRoute>} />
+            <Route path="/users/:id/kpi"
+              element={<ProtectedRoute allowedRoles={['director']}><S><UserKpiPage /></S></ProtectedRoute>} />
 
             {/* Both roles */}
             <Route path="/finance"

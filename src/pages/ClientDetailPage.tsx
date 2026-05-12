@@ -20,8 +20,6 @@ export function ClientDetailPage() {
   const { client, loading, error, refetch } = useClient(id)
   const [editOpen, setEditOpen] = useState(false)
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = localDb as any
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner className="w-8 h-8 text-blue-600" /></div>
   if (error || !client) return <div className="p-8 text-center text-red-500">{error ?? t.clientDetail.notFound}</div>
@@ -35,7 +33,7 @@ export function ClientDetailPage() {
   const typeColor = client.type === 'individual' ? 'blue' : client.type === 'company' ? 'purple' : 'teal'
 
   const handleArchive = async () => {
-    await db.from('clients').update({ is_archived: true }).eq('id', client.id)
+    await localDb.from('clients').update({ is_archived: true }).eq('id', client.id)
     navigate('/clients')
   }
 

@@ -1,11 +1,11 @@
-import type { OrderStatus, OrderPriority } from '../types'
+import type { OrderPriority, OrderStatus } from '../types'
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   new: 'Новый',
   in_progress: 'В работе',
   ready: 'Готов',
-  completed: 'Завершён',
-  cancelled: 'Отменён',
+  completed: 'Завершен',
+  cancelled: 'Отменен',
 }
 
 export const PRIORITY_LABELS: Record<OrderPriority, string> = {
@@ -20,17 +20,15 @@ export const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   ready: 'completed',
 }
 
-export const NEXT_STATUS_LABEL: Partial<Record<OrderStatus, string>> = {
-  new: 'Взять в работу',
-  in_progress: 'Отметить готовым',
-  ready: 'Завершить заказ',
-}
+export const ORDER_STATUSES: OrderStatus[] = ['new', 'in_progress', 'ready', 'completed', 'cancelled']
 
-export const KANBAN_COLUMNS: { status: OrderStatus; label: string }[] = [
-  { status: 'new', label: 'Новый' },
-  { status: 'in_progress', label: 'В работе' },
-  { status: 'ready', label: 'Готов' },
-  { status: 'completed', label: 'Завершён' },
+export const ORDER_PRIORITIES: OrderPriority[] = ['low', 'medium', 'high']
+
+export const KANBAN_COLUMNS: { status: OrderStatus }[] = [
+  { status: 'new' },
+  { status: 'in_progress' },
+  { status: 'ready' },
+  { status: 'completed' },
 ]
 
 export const PAYMENT_TYPE_LABELS = {

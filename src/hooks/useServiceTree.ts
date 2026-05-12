@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { localDb } from '../lib/localDb'
 import type { ServiceCategory, ServiceSubcategory, Service } from '../types'
 
 export interface ServiceTree {
@@ -18,9 +18,9 @@ export function useServiceTree(): ServiceTree {
   useEffect(() => {
     const load = async () => {
       const [cats, subs, svcs] = await Promise.all([
-        supabase.from('service_categories').select('*').order('name'),
-        supabase.from('service_subcategories').select('*').order('name'),
-        supabase.from('services').select('*').eq('is_archived', false).order('name'),
+        localDb.from('service_categories').select('*').order('name'),
+        localDb.from('service_subcategories').select('*').order('name'),
+        localDb.from('services').select('*').eq('is_archived', false).order('name'),
       ])
       setCategories((cats.data ?? []) as ServiceCategory[])
       setSubcategories((subs.data ?? []) as ServiceSubcategory[])
