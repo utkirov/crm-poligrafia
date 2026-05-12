@@ -68,8 +68,8 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   return (
     <aside
-      className="w-64 shrink-0 flex flex-col h-screen sticky top-0"
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 100%)' }}
+      className="w-[272px] shrink-0 flex flex-col h-screen sticky top-0 rounded-r-[28px] border-r border-white/10"
+      style={{ background: 'linear-gradient(180deg, #07111f 0%, #0f172a 46%, #162033 100%)' }}
     >
       <div className="px-5 py-5 border-b border-white/[0.06]">
         <div className="flex items-center justify-between">

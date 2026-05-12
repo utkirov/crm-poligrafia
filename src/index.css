@@ -4,6 +4,44 @@
 /* ─── Enable class-based dark mode ──────────────────────── */
 @variant dark (&:where(.dark, .dark *));
 
+:root {
+  --app-bg: #edf3f7;
+  --surface-0: rgba(255, 255, 255, 0.82);
+  --surface-1: #ffffff;
+  --surface-2: #f8fbfd;
+  --surface-border: rgba(148, 163, 184, 0.18);
+  --ink-strong: #0f172a;
+  --ink-soft: #475569;
+  --accent-500: #0891b2;
+  --accent-600: #0f766e;
+  --shadow-panel: 0 18px 48px rgba(15, 23, 42, 0.08);
+}
+
+.workspace-panel {
+  background: var(--surface-0);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(18px);
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) 320px;
+  gap: 18px;
+}
+
+@media (max-width: 1279px) {
+  .workspace-grid {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Reset ─────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 

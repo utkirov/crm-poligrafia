@@ -12,6 +12,10 @@ test('local CRM smoke flow', async ({ page }) => {
   await page.getByRole('button', { name: 'Войти' }).click()
 
   await expect(page).toHaveURL(/\/dashboard/)
+  await expect(page.getByTestId('orders-workspace')).toBeVisible()
+  await expect(page.getByTestId('workspace-list-rail')).toBeVisible()
+  await expect(page.getByTestId('workspace-active-canvas')).toBeVisible()
+  await expect(page.getByTestId('workspace-context-rail')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Заказы' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Финансы' }).click()
@@ -62,8 +66,21 @@ test('local CRM smoke flow', async ({ page }) => {
   await page.getByRole('button', { name: 'Далее' }).click()
   await expect(page.getByRole('heading', { name: 'Шаг 3: Оплата' })).toBeVisible()
 
-  await page.goto('/dashboard')
-  await page.getByText('Печать визиток').click()
+  const seededOrderId = await page.evaluate(() => {
+    const raw = window.localStorage.getItem('crm-poligraf.local-db.v1')
+    if (!raw) {
+      return null
+    }
+
+    const db = JSON.parse(raw) as { orders?: Array<{ id: string; title: string }> }
+    return db.orders?.find((order) => order.title === 'Печать визиток')?.id ?? null
+  })
+
+  if (!seededOrderId) {
+    throw new Error('Seeded order "Печать визиток" was not found in local storage')
+  }
+
+  await page.goto(`/orders/${seededOrderId}`)
   await expect(page.getByRole('heading', { name: 'Печать визиток' })).toBeVisible()
 
   const downloadPromise = page.waitForEvent('download')

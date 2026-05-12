@@ -10,11 +10,11 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
+    <div className="flex min-h-screen bg-[var(--app-bg)] text-[var(--ink-strong)] transition-colors duration-200">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden animate-fade-in"
+          className="fixed inset-0 z-40 bg-slate-950/55 md:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -31,7 +31,7 @@ export function MainLayout() {
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
-      <main className="flex-1 flex flex-col overflow-x-hidden min-w-0">
+      <main className="flex-1 flex flex-col overflow-x-hidden min-w-0 px-3 md:px-4 lg:px-5 py-3 md:py-4">
         {/* Mobile topbar */}
         <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 transition-colors duration-200">
           <button
