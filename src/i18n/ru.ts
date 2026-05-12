@@ -100,6 +100,7 @@ export const ru = {
   },
   dashboard: {
     title:            'Заказы',
+    workspaceLabel:   'Рабочее пространство заказов',
     createOrder:      'Создать заказ',
     kanban:           'Канбан',
     list:             'Список',

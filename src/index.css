@@ -17,6 +17,19 @@
   --shadow-panel: 0 18px 48px rgba(15, 23, 42, 0.08);
 }
 
+.dark {
+  --app-bg: #020817;
+  --surface-0: rgba(15, 23, 42, 0.82);
+  --surface-1: #0f172a;
+  --surface-2: #162033;
+  --surface-border: rgba(148, 163, 184, 0.2);
+  --ink-strong: #e2e8f0;
+  --ink-soft: #94a3b8;
+  --accent-500: #22d3ee;
+  --accent-600: #14b8a6;
+  --shadow-panel: 0 20px 52px rgba(2, 8, 23, 0.38);
+}
+
 .workspace-panel {
   background: var(--surface-0);
   border: 1px solid var(--surface-border);

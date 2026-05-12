@@ -102,6 +102,7 @@ export const uz: Translations = {
   },
   dashboard: {
     title:            'Buyurtmalar',
+    workspaceLabel:   'Buyurtmalar ish maydoni',
     createOrder:      'Buyurtma yaratish',
     kanban:           'Kanban',
     list:             "Ro'yxat",
