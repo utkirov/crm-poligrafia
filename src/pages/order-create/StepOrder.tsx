@@ -200,7 +200,7 @@ export function StepOrder({ form, onChange }: Props) {
   const updateOrderItems = (items: OrderItemDraft[]) => {
     onChange({
       orderItems: items,
-      totalAmount: String(sumOrderItems(items)),
+      totalAmount: formatPriceInput(sumOrderItems(items)),
     })
   }
 
@@ -413,6 +413,21 @@ export function StepOrder({ form, onChange }: Props) {
         >
           {t.stepOrder.addNewService}
         </button>
+      </div>
+
+      {/* Total amount — auto-filled from items, but always manually editable */}
+      <div className="border border-slate-200 dark:border-slate-700 rounded-2xl p-5">
+        <PriceInput
+          label={`${t.orders.amount} *`}
+          value={formatPriceInput(form.totalAmount)}
+          onChange={(v) => onChange({ totalAmount: v })}
+          placeholder="0"
+        />
+        {form.orderItems.length > 0 && (
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+            {t.common.total} {t.stepOrder.autoLabel}: {formatCurrency(itemsTotal)}
+          </p>
+        )}
       </div>
 
       <div className="border border-slate-200 dark:border-slate-700 rounded-2xl p-5">
