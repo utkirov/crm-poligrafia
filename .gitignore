@@ -25,3 +25,6 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Shared local database (generated at runtime, not committed)
+data/db.json

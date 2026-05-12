@@ -121,8 +121,12 @@ type OrderBy = {
 const DB_STORAGE_KEY = 'crm-poligraf.local-db.v1'
 const SESSION_STORAGE_KEY = 'crm-poligraf.local-session.v1'
 const LOCAL_DB_VERSION = 3
+const DB_API_URL = '/api/db'
 
 const isBrowser = typeof window !== 'undefined'
+
+/** True when the Vite dev-server file API was found on startup */
+let serverModeActive = false
 
 let memoryDb: LocalDatabaseState | null = null
 let memorySession: LocalSession | null = null
@@ -742,6 +746,14 @@ function loadDatabase(): LocalDatabaseState {
 function saveDatabaseToStorage(nextDb: LocalDatabaseState) {
   if (isBrowser) {
     window.localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(nextDb))
+  }
+  if (serverModeActive) {
+    // fire-and-forget: persist to data/db.json via Vite plugin API
+    fetch(DB_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nextDb),
+    }).catch(() => { /* ignore network errors */ })
   }
 }
 
@@ -1667,6 +1679,48 @@ const localDb = {
     channels = channels.filter((item) => item.name !== channel.name)
     return { error: null }
   },
+}
+
+/**
+ * Call once before mounting React.
+ * Tries to load the database from the Vite dev-server file API (data/db.json).
+ * If the API is available, server mode is activated and every subsequent save
+ * also writes back to the file so all devices on the same network share data.
+ * Falls back to localStorage transparently when the API is not reachable.
+ */
+export async function initializeDatabase(): Promise<void> {
+  if (!isBrowser) return
+
+  try {
+    const response = await fetch(DB_API_URL, { method: 'GET' })
+    if (!response.ok) throw new Error('API not available')
+
+    const json: unknown = await response.json()
+
+    if (json !== null && typeof json === 'object') {
+      const payload = json as LocalDatabaseState
+      memoryDb = payload
+      migrateLegacyDatabase(memoryDb)
+      serverModeActive = true
+      // mirror to localStorage so offline fallback stays current
+      window.localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(memoryDb))
+      return
+    }
+
+    // API returned null → no db.json yet; initialise from localStorage seed
+    serverModeActive = true
+    const db = loadDatabase() // creates seed data + writes localStorage
+    // persist to file
+    await fetch(DB_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(db),
+    }).catch(() => { /* ignore */ })
+  } catch {
+    // Vite API not reachable (production build, or API not wired up) → use localStorage
+    serverModeActive = false
+    loadDatabase()
+  }
 }
 
 export { localDb }

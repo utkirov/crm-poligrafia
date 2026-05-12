@@ -3,15 +3,18 @@ import { createRoot } from 'react-dom/client'
 import { Toaster } from 'sonner'
 import './index.css'
 import App from './App.tsx'
+import { initializeDatabase } from './lib/localDb'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-    <Toaster
-      position="top-right"
-      richColors
-      toastOptions={{ duration: 3500 }}
-      expand={false}
-    />
-  </StrictMode>,
-)
+initializeDatabase().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+      <Toaster
+        position="top-right"
+        richColors
+        toastOptions={{ duration: 3500 }}
+        expand={false}
+      />
+    </StrictMode>,
+  )
+})
