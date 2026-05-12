@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { OrderPriority, OrderStatus, OrderWithClient } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { PriorityBadge } from '../../components/PriorityBadge'
+import { Pagination } from '../../components/Pagination'
 import { formatDate, formatCurrency, isOverdue } from '../../utils/format'
 import { ORDER_STATUSES, ORDER_PRIORITIES } from '../../utils/orderUtils'
 import { useT } from '../../i18n'
 import { localDb } from '../../lib/localDb'
 import { toastSuccess, toastError } from '../../lib/toast'
+
+const PAGE_SIZE = 25
 
 type SortKey = 'order_number' | 'title' | 'deadline' | 'total_amount' | 'status' | 'priority'
 
@@ -50,6 +53,7 @@ export function ListView({ orders: propOrders }: Props) {
   const [editingStatusId, setEditingStatusId] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [showOldCompleted, setShowOldCompleted] = useState(false)
+  const [page, setPage] = useState(1)
 
   const statusFilter = searchParams.get('status') ?? ''
   const priorityFilter = searchParams.get('priority') ?? ''
@@ -139,6 +143,12 @@ export function ListView({ orders: propOrders }: Props) {
   const oldCompleted = orders.filter(isOldCompleted)
   const activeOrders = orders.filter((order) => !isOldCompleted(order))
   const filtered = applyFilters(activeOrders)
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Reset page when filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1) }, [statusFilter, priorityFilter, search, sortKey, sortAsc])
   const filteredOldCompleted = oldCompleted
     .filter((order) => {
       if (!search) return true
@@ -190,7 +200,7 @@ export function ListView({ orders: propOrders }: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-              {filtered.map((order) => {
+              {paginatedFiltered.map((order) => {
                 const overdue = isOverdue(order.deadline)
                 return (
                   <tr
@@ -270,6 +280,13 @@ export function ListView({ orders: propOrders }: Props) {
               )}
             </tbody>
           </table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPage={setPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       </div>
 

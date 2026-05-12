@@ -6,17 +6,11 @@ import { Input } from '../components/Input'
 import { Spinner } from '../components/Spinner'
 import { useMonthlyKpis } from '../hooks/useMonthlyKpis'
 import { useUsers } from '../hooks/useUsers'
-import * as localDbModule from '../lib/localDb'
+import { upsertMonthlyKpi } from '../lib/localDb'
 import { toastError, toastSuccess } from '../lib/toast'
 import { useT } from '../i18n'
 import type { MonthlyKpi, MonthlyKpiInput } from '../types'
 import { getRoleKpiFields, isKpiEligibleRole, normalizeKpiMonth } from '../utils/kpiUtils'
-
-type UpsertMonthlyKpi = (input: MonthlyKpiInput) => Promise<{ data: MonthlyKpi | null; error: string | null }>
-
-const upsertMonthlyKpi = (
-  localDbModule as unknown as { upsertMonthlyKpi?: UpsertMonthlyKpi }
-).upsertMonthlyKpi
 
 const EMPTY_VALUES: Record<string, string> = {
   sales_plan: '0',
@@ -72,11 +66,6 @@ function UserKpiForm(props: {
   }
 
   const handleSave = async () => {
-    if (!upsertMonthlyKpi) {
-      toastError(t.common.error)
-      return
-    }
-
     setSaving(true)
     const { error } = await upsertMonthlyKpi({
       user_id: employeeId,

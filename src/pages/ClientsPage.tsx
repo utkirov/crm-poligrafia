@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { localDb } from '../lib/localDb'
 import { useClients } from '../hooks/useClients'
@@ -8,10 +8,13 @@ import { Badge } from '../components/Badge'
 import { Button } from '../components/Button'
 import { ClientFormModal } from '../components/ClientFormModal'
 import { EmptyState } from '../components/EmptyState'
+import { Pagination } from '../components/Pagination'
 import { TableSkeleton } from '../components/Skeleton'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useT } from '../i18n'
 import type { Client, ClientType } from '../types'
+
+const PAGE_SIZE = 20
 
 const TYPE_COLORS: Record<ClientType, 'blue' | 'purple' | 'teal'> = {
   individual: 'blue',
@@ -28,6 +31,7 @@ export function ClientsPage() {
   const [showArchived, setShowArchived] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editClient, setEditClient] = useState<Client | null>(null)
+  const [page, setPage] = useState(1)
 
 
   const typeLabels: Record<ClientType, string> = {
@@ -47,6 +51,12 @@ export function ClientsPage() {
 
   const activeCount = clients.filter((client) => !client.is_archived).length
   const archivedCount = clients.filter((client) => client.is_archived).length
+
+  const totalPages = Math.ceil(filteredClients.length / PAGE_SIZE)
+  const paginatedClients = filteredClients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1) }, [search, typeFilter, showArchived])
 
   const handleArchive = async (client: Client) => {
     const { error } = await localDb.from('clients').update({ is_archived: true }).eq('id', client.id)
@@ -143,7 +153,7 @@ export function ClientsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                {filteredClients.map((client) => (
+                {paginatedClients.map((client) => (
                   <tr
                     key={client.id}
                     className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${client.is_archived ? 'opacity-50' : ''}`}
@@ -204,6 +214,14 @@ export function ClientsPage() {
                 ))}
               </tbody>
             </table>
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPage={setPage}
+              totalItems={filteredClients.length}
+              pageSize={PAGE_SIZE}
+            />
 
             <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
               <span className="text-xs text-slate-500 dark:text-slate-400">
