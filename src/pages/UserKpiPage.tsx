@@ -9,7 +9,7 @@ import { useUsers } from '../hooks/useUsers'
 import { upsertMonthlyKpi } from '../lib/localDb'
 import { toastError, toastSuccess } from '../lib/toast'
 import { useT } from '../i18n'
-import type { MonthlyKpi, MonthlyKpiInput } from '../types'
+import type { MonthlyKpi } from '../types'
 import { getRoleKpiFields, isKpiEligibleRole, normalizeKpiMonth } from '../utils/kpiUtils'
 
 const EMPTY_VALUES: Record<string, string> = {

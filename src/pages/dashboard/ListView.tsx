@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import type { OrderPriority, OrderStatus, OrderWithClient } from '../../types'
+import type { OrderStatus, OrderWithClient } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { PriorityBadge } from '../../components/PriorityBadge'
 import { Pagination } from '../../components/Pagination'
