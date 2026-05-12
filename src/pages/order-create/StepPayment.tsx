@@ -5,6 +5,7 @@ import { Button } from '../../components/Button'
 import { PriceInput } from '../../components/PriceInput'
 import { formatCurrency } from '../../utils/format'
 import { formatPriceInput, parsePriceInput } from '../../utils/priceInput'
+import { calculateCashbackToApply, calculatePayableAmount } from '../../utils/paymentUtils'
 import { useT } from '../../i18n'
 import type { OrderFormState, PaymentDraft, PaymentMode } from './types'
 import type { PaymentType } from '../../types'
@@ -27,26 +28,40 @@ export function StepPayment({ form, onChange }: Props) {
   const cashbackBalance = client?.cashback_balance ?? 0
   const hasCashback = cashbackBalance > 0
 
-  const total       = parseFloat(form.totalAmount) || 0
-  const costPrice   = parsePriceInput(form.costPrice)
-  const cashbackUsed = form.applyCashback ? cashbackBalance : 0
-  const finalAmount = Math.max(0, total - cashbackUsed)
+  const total = parsePriceInput(form.totalAmount)
+  const costPrice = parsePriceInput(form.costPrice)
+  const cashbackUsed = form.applyCashback ? calculateCashbackToApply(cashbackBalance, total) : 0
+  const finalAmount = calculatePayableAmount(total, cashbackUsed)
   const margin      = total > 0 ? Math.round(((total - costPrice) / total) * 100) : 0
 
+  // Keep full-mode amount in sync with total/cashback changes
   useEffect(() => {
-    if (form.paymentMode === 'full') {
-      const today = new Date().toISOString().slice(0, 10)
-      onChange({
-        payments: [{
-          id: form.payments[0]?.id ?? crypto.randomUUID(),
-          amount: formatPriceInput(finalAmount),
-          dueDate: today,
-          paymentType: form.payments[0]?.paymentType ?? 'cash',
-        }],
-      })
-    }
+    if (form.paymentMode !== 'full') return
+    const today = new Date().toISOString().slice(0, 10)
+    onChange({
+      payments: [{
+        id: form.payments[0]?.id ?? crypto.randomUUID(),
+        amount: formatPriceInput(finalAmount),
+        dueDate: today,
+        paymentType: form.payments[0]?.paymentType ?? 'cash',
+      }],
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.paymentMode, form.applyCashback, form.totalAmount])
+
+  // When switching to partial mode, reset to one empty payment slot
+  useEffect(() => {
+    if (form.paymentMode !== 'partial') return
+    onChange({
+      payments: [{
+        id: crypto.randomUUID(),
+        amount: '',
+        dueDate: new Date().toISOString().slice(0, 10),
+        paymentType: 'cash',
+      }],
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.paymentMode])
 
   const updatePayment = (id: string, patch: Partial<PaymentDraft>) => {
     onChange({ payments: form.payments.map((p) => (p.id === id ? { ...p, ...patch } : p)) })
@@ -90,10 +105,10 @@ export function StepPayment({ form, onChange }: Props) {
             </span>
           </div>
 
-          {form.applyCashback && cashbackBalance > 0 && (
+          {form.applyCashback && cashbackUsed > 0 && (
             <div className="flex items-center justify-between text-green-700">
               <span className="text-sm">{t.stepPayment.clientCashback}</span>
-              <span className="text-sm font-semibold tabular-nums">− {formatCurrency(cashbackBalance)}</span>
+              <span className="text-sm font-semibold tabular-nums">− {formatCurrency(cashbackUsed)}</span>
             </div>
           )}
 
@@ -137,7 +152,7 @@ export function StepPayment({ form, onChange }: Props) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">{t.stepPayment.clientCashback}</p>
-                <p className="text-sm text-green-600 font-bold">{formatCurrency(cashbackBalance)}</p>
+                <p className="text-sm text-green-600 font-bold">{formatCurrency(cashbackUsed || cashbackBalance)}</p>
                 {form.applyCashback && (
                   <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">
                     {t.stepPayment.totalToPay}: <strong>{formatCurrency(finalAmount)}</strong>

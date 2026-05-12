@@ -1,11 +1,12 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { localDb } from '../lib/localDb'
 import { useClient } from '../hooks/useClient'
 import { Avatar } from '../components/Avatar'
 import { Badge } from '../components/Badge'
 import { Button } from '../components/Button'
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
 import { ClientFormModal } from '../components/ClientFormModal'
 import { Spinner } from '../components/Spinner'
@@ -18,8 +19,9 @@ export function ClientDetailPage() {
   const navigate = useNavigate()
   const { client, loading, error, refetch } = useClient(id)
   const [editOpen, setEditOpen] = useState(false)
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = localDb as any
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner className="w-8 h-8 text-blue-600" /></div>
   if (error || !client) return <div className="p-8 text-center text-red-500">{error ?? t.clientDetail.notFound}</div>
@@ -47,7 +49,9 @@ export function ClientDetailPage() {
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>{t.clientDetail.editBtn}</Button>
             {!client.is_archived && (
-              <Button variant="danger" size="sm" onClick={handleArchive}>{t.clientDetail.archiveBtn}</Button>
+              <Button variant="danger" size="sm" onClick={() => setArchiveConfirmOpen(true)}>
+                {t.clientDetail.archiveBtn}
+              </Button>
             )}
           </div>
         </div>
@@ -170,7 +174,7 @@ export function ClientDetailPage() {
                      tx.type === 'earned_referral' ? t.clientDetail.txEarnedReferral : t.clientDetail.txSpent}
                   </span>
                   <span className={tx.type === 'spent' ? 'text-red-500' : 'text-green-600'}>
-                    {tx.type === 'spent' ? '−' : '+'}{formatCurrency(tx.amount)}
+                    {tx.type === 'spent' ? '-' : '+'}{formatCurrency(tx.amount)}
                   </span>
                 </div>
               ))}
@@ -214,6 +218,27 @@ export function ClientDetailPage() {
         onSaved={refetch}
         initial={client}
       />
+
+      <Modal
+        open={archiveConfirmOpen}
+        onClose={() => setArchiveConfirmOpen(false)}
+        title={t.clientDetail.confirmArchiveTitle}
+        className="max-w-sm"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {t.clientDetail.confirmArchiveText}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setArchiveConfirmOpen(false)}>
+              {t.common.cancel}
+            </Button>
+            <Button variant="danger" onClick={() => { setArchiveConfirmOpen(false); void handleArchive() }}>
+              {t.clientDetail.confirmArchiveBtn}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
