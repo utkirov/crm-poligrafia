@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '../hooks/useNotifications'
 import { BellIcon } from './icons'
 import { formatDateTime } from '../utils/format'
+import { useT } from '../i18n'
 
 export function NotificationBell() {
   const navigate = useNavigate()
+  const t = useT()
   const { notifications, unreadCount, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -37,20 +39,20 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-scale-in">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Уведомления</h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t.notifications.title}</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium cursor-pointer transition-colors"
               >
-                Прочитать все
+                {t.notifications.markAll}
               </button>
             )}
           </div>
 
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-700/50">
             {notifications.length === 0 && (
-              <p className="px-4 py-8 text-sm text-slate-400 dark:text-slate-500 text-center">Нет уведомлений</p>
+              <p className="px-4 py-8 text-sm text-slate-400 dark:text-slate-500 text-center">{t.notifications.noItems}</p>
             )}
             {notifications.map((n, i) => (
               <div

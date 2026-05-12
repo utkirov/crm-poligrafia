@@ -15,7 +15,7 @@ import { Spinner } from '../components/Spinner'
 import { OrderTicketForm } from '../components/OrderTicketForm'
 import { OrderTicketStatusBadge } from '../components/OrderTicketStatusBadge'
 import { formatCurrency, formatDate, formatDateTime, getInitials, isOverdue } from '../utils/format'
-import { NEXT_STATUS, STATUS_STEP } from '../utils/orderUtils'
+import { NEXT_STATUS, PREV_STATUS, STATUS_STEP } from '../utils/orderUtils'
 import { generateOrderPdf } from '../utils/pdf'
 import type { OrderStatus } from '../types'
 import { useT } from '../i18n'
@@ -44,6 +44,7 @@ export function OrderDetailPage() {
   const [cancelComment, setCancelComment] = useState('')
   const [transitioning, setTransitioning] = useState(false)
   const [confirmCompleteOpen, setConfirmCompleteOpen] = useState(false)
+  const [confirmRevertOpen, setConfirmRevertOpen] = useState(false)
   const [cancelReasons, setCancelReasons] = useState<{ id: string; reason: string }[]>([])
 
   useEffect(() => {
@@ -144,6 +145,24 @@ export function OrderDetailPage() {
 
     setTransitioning(false)
     toastSuccess(t.orderDetail.statusUpdated)
+    refetch()
+  }
+
+  const handleRevertStatus = async () => {
+    const prevStatus = PREV_STATUS[order.status]
+    if (!prevStatus) return
+
+    setTransitioning(true)
+    await localDb.from('orders').update({ status: prevStatus, updated_at: new Date().toISOString() }).eq('id', order.id)
+    await localDb.from('order_timeline').insert({
+      order_id: order.id,
+      user_id: user!.id,
+      event_type: 'status_changed',
+      description: `${t.status[order.status]} -> ${t.status[prevStatus]}`,
+    })
+    setConfirmRevertOpen(false)
+    setTransitioning(false)
+    toastSuccess(t.orderDetail.statusReverted)
     refetch()
   }
 
@@ -283,18 +302,30 @@ export function OrderDetailPage() {
                     )
                   })}
                 </div>
-                {canManageOrder && NEXT_STATUS[order.status] ? (
-                  <Button
-                    onClick={order.status === 'ready' ? () => setConfirmCompleteOpen(true) : handleNextStatus}
-                    loading={transitioning}
-                  >
-                    {order.status === 'new'
-                      ? t.orderUtils.takeToWork
-                      : order.status === 'in_progress'
-                        ? t.orderUtils.markReady
-                        : t.orderUtils.completeOrder}
-                  </Button>
-                ) : null}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {user?.role === 'director' && PREV_STATUS[order.status] ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setConfirmRevertOpen(true)}
+                      loading={transitioning}
+                    >
+                      {t.orderDetail.revertStatusBtn}
+                    </Button>
+                  ) : null}
+                  {canManageOrder && NEXT_STATUS[order.status] ? (
+                    <Button
+                      onClick={order.status === 'ready' ? () => setConfirmCompleteOpen(true) : handleNextStatus}
+                      loading={transitioning}
+                    >
+                      {order.status === 'new'
+                        ? t.orderUtils.takeToWork
+                        : order.status === 'in_progress'
+                          ? t.orderUtils.markReady
+                          : t.orderUtils.completeOrder}
+                    </Button>
+                  ) : null}
+                </div>
               </>
             )}
           </div>
@@ -644,6 +675,31 @@ export function OrderDetailPage() {
               loading={transitioning}
             >
               {t.orderDetail.confirmCompleteBtn}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={confirmRevertOpen}
+        onClose={() => setConfirmRevertOpen(false)}
+        title={t.orderDetail.confirmRevertTitle}
+        className="max-w-sm"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {t.orderDetail.confirmRevertText}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setConfirmRevertOpen(false)}>
+              {t.common.cancel}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void handleRevertStatus()}
+              loading={transitioning}
+            >
+              {t.orderDetail.confirmRevertBtn}
             </Button>
           </div>
         </div>

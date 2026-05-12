@@ -20,6 +20,11 @@ export const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   ready: 'completed',
 }
 
+export const PREV_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
+  in_progress: 'new',
+  ready: 'in_progress',
+}
+
 export const ORDER_STATUSES: OrderStatus[] = ['new', 'in_progress', 'ready', 'completed', 'cancelled']
 
 export const ORDER_PRIORITIES: OrderPriority[] = ['low', 'medium', 'high']

@@ -44,30 +44,24 @@ export function useNotifications() {
     setUnreadCount(0)
   }, [user])
 
+  // Initial load
   useEffect(() => {
-    let cancelled = false
+    void fetchNotifications()
+  }, [fetchNotifications])
 
-    const load = async () => {
-      if (!user) {
-        if (!cancelled) {
-          setNotifications([])
-          setUnreadCount(0)
-        }
-        return
-      }
-
-      const list = await loadNotifications(user.id)
-      if (cancelled) return
-      setNotifications(list)
-      setUnreadCount(list.filter((notification) => !notification.is_read).length)
-    }
-
-    void load()
+  // Real-time subscription to notifications table changes
+  useEffect(() => {
+    const channel = localDb
+      .channel('notifications-badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        void fetchNotifications()
+      })
+      .subscribe()
 
     return () => {
-      cancelled = true
+      void localDb.removeChannel(channel)
     }
-  }, [user])
+  }, [fetchNotifications])
 
   return { notifications, unreadCount, refetch: fetchNotifications, markAllRead }
 }
